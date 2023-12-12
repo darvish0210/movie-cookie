@@ -1,6 +1,5 @@
 from django.urls import path, include
-from .getdatas import getMovieInfo
+from . import views
 
-urlpatterns = [
-    path('test/', getMovieInfo)
-]
+
+urlpatterns = [path("search/", views.SerachMovieInDB.as_view(), name="search")]
