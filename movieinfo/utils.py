@@ -68,7 +68,7 @@ def saveMovieInfo(data):
                 continue
 
             releaseDate = (
-                str(data["Data"][0]["Result"][i]["repRlsDate"])
+                f'{data["Data"][0]["Result"][i]["repRlsDate"][0:4]}-{data["Data"][0]["Result"][i]["repRlsDate"][4:6]}-{data["Data"][0]["Result"][i]["repRlsDate"][6:8]}'
                 if data["Data"][0]["Result"][i]["repRlsDate"]
                 else "1930-01-01"
             )
