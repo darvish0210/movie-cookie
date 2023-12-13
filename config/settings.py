@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "dj_rest_auth.registration",
     # custom apps
     "movieinfo",
+    "recommend",
 ]
 
 MIDDLEWARE = [
