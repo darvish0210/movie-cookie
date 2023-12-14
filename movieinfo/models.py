@@ -26,3 +26,18 @@ class OneLineCritic(models.Model):
     starpoint = models.IntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+
+class TestLikeMovie(models.Model):
+    id = models.AutoField(primary_key=True)
+    movie = models.ForeignKey("MovieInfo", on_delete=models.CASCADE)
+
+
+class TestWatchedMovie(models.Model):
+    id = models.AutoField(primary_key=True)
+    movie = models.ForeignKey("MovieInfo", on_delete=models.CASCADE)
+
+
+class TestWatchlistMovie(models.Model):
+    id = models.AutoField(primary_key=True)
+    movie = models.ForeignKey("MovieInfo", on_delete=models.CASCADE)

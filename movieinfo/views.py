@@ -1,6 +1,8 @@
 import json
 import re
 
+# 테스트를 위한 csrf exempt
+
 from django.shortcuts import render
 from django.db.models import Q
 from rest_framework import viewsets
@@ -9,11 +11,20 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from . import utils
-from .models import MovieInfo, OneLineCritic
+from .models import (
+    MovieInfo,
+    OneLineCritic,
+    TestLikeMovie,
+    TestWatchedMovie,
+    TestWatchlistMovie,
+)
 from .serializers import (
     MovieInfoSerializers,
     OneLineCriticSerializers,
     OneLineCriticCreateUpdateSerializers,
+    TestLikeMovieSerializers,
+    TestWahtchlistMovieSerializers,
+    TestWatchedMovieSerializers,
 )
 
 
@@ -42,13 +53,13 @@ class OneLineCriticViewSet(viewsets.ModelViewSet):
         pk = self.kwargs["movie_id"]
         queryset = OneLineCritic.objects.filter(movie__id=pk)
         serializer = OneLineCriticSerializers(queryset, many=True)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def create(self, request, *args, **kwargs):
         serializer = OneLineCriticCreateUpdateSerializers(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
-        return Response(serializer.data, status=201)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def perform_create(self, serializer):
         """
@@ -57,7 +68,7 @@ class OneLineCriticViewSet(viewsets.ModelViewSet):
         MovieInfo의 id == movie_id인 레코드를 OneLineCritic의 movie의 외래키로 연결시키도록 한다.
         이때 사용자로부터 movie에 대한 값은 받지 않으며, url을 통해서만 받는다.
 
-        나머지 content와 startpoin의 값은 사용자가 입력한 값을 받는다.
+        나머지 content와 starpoint의 값은 사용자가 입력한 값을 받는다.
         """
         req = self.request.data
         content = req["content"]
@@ -84,7 +95,7 @@ class OneLineCriticViewSet(viewsets.ModelViewSet):
         try:
             instance = OneLineCritic.objects.get(Q(id=pk) & Q(movie__id=movie_id))
             serializer = OneLineCriticSerializers(instance)
-            return Response(serializer.data)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         except:
             errorMessage = {"message": "잘못된 응답입니다."}
             return Response(errorMessage, status=status.HTTP_400_BAD_REQUEST)
@@ -123,3 +134,74 @@ class OneLineCriticViewSet(viewsets.ModelViewSet):
 class MovieInfoViewSet(viewsets.ModelViewSet):
     queryset = MovieInfo.objects.all()
     serializer_class = MovieInfoSerializers
+
+
+class UserLWWViewSet(viewsets.ModelViewSet):
+    """
+    좋아요, 볼 영화, 본 영화를 체크할 수 있는 viewset
+
+    """
+
+    queryset = TestLikeMovie.objects.all()
+    serializer_class = TestLikeMovieSerializers
+
+    # authentication_classes = ()
+
+    def create(self, request, *args, **kwargs):
+        movie_id = kwargs["movie_id"]
+        mode = kwargs["mode"]
+        if mode == "like":
+            instance = TestLikeMovieSerializers(data={"movie_id": movie_id})
+            instance.is_valid(raise_exception=True)
+            instance.save(movie=MovieInfo.objects.get(id=movie_id))
+            return Response(instance.data, status=status.HTTP_201_CREATED)
+        elif mode == "watchlist":
+            instance = TestWahtchlistMovieSerializers(data={"movie_id": movie_id})
+            instance.is_valid(raise_exception=True)
+            instance.save(movie=MovieInfo.objects.get(id=movie_id))
+            return Response(instance.data, status=status.HTTP_201_CREATED)
+        elif mode == "watched":
+            instance = TestWatchedMovieSerializers(data={"movie_id": movie_id})
+            instance.is_valid(raise_exception=True)
+            instance.save(movie=MovieInfo.objects.get(id=movie_id))
+            return Response(instance.data, status=status.HTTP_201_CREATED)
+        else:
+            errorMessage = {"message": "잘못된 응답입니다."}
+            return Response(errorMessage, status=status.HTTP_400_BAD_REQUEST)
+
+    def destroy(self, request, *args, **kwargs):
+        movie_id = kwargs["movie_id"]
+        mode = kwargs["mode"]
+        if mode == "like":
+            try:
+                instance = TestLikeMovie.objects.get(
+                    movie=MovieInfo.objects.get(id=movie_id)
+                )
+                instance.delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            except:
+                errorMessage = {"message": "잘못된 응답입니다."}
+                return Response(errorMessage, status=status.HTTP_400_BAD_REQUEST)
+        elif mode == "watchlist":
+            try:
+                instance = TestWatchlistMovie.objects.get(
+                    movie=MovieInfo.objects.get(id=movie_id)
+                )
+                instance.delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            except:
+                errorMessage = {"message": "잘못된 응답입니다."}
+                return Response(errorMessage, status=status.HTTP_400_BAD_REQUEST)
+        elif mode == "watched":
+            try:
+                instance = TestWatchedMovie.objects.get(
+                    movie=MovieInfo.objects.get(id=movie_id)
+                )
+                instance.delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            except:
+                errorMessage = {"message": "잘못된 응답입니다."}
+                return Response(errorMessage, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            errorMessage = {"message": "잘못된 응답입니다."}
+            return Response(errorMessage, status=status.HTTP_400_BAD_REQUEST)
