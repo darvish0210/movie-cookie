@@ -7,14 +7,14 @@ class MovieInfo(models.Model):
     title = models.TextField()
     posters = models.TextField(blank=True, null=True)
     vods = models.TextField(blank=True, null=True)
-    directors = models.CharField(max_length=64, blank=True, null=True)
+    directors = models.TextField(blank=True, null=True)
     actors = models.TextField(blank=True, null=True)
-    nations = models.CharField(max_length=64, blank=True, null=True)
+    nations = models.TextField(blank=True, null=True)
     companies = models.TextField(blank=True, null=True)
     plot = models.TextField(blank=True, null=True)
     runtime = models.IntegerField(blank=True, null=True)
-    rating = models.CharField(max_length=64, blank=True, null=True)
-    genres = models.CharField(max_length=64, blank=True, null=True)
+    rating = models.TextField(blank=True, null=True)
+    genres = models.TextField(blank=True, null=True)
     releaseDate = models.DateField(blank=True, null=True)
 
 
