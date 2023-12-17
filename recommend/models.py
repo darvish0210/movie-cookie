@@ -8,9 +8,9 @@ class Recommend(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="recommends")
     # 유저 구현 후 'accounts.User'로 바꾸기
 
+    input_nation = models.CharField(max_length=5)
+    input_period = models.CharField(max_length=14)
     input_genre = models.TextField()
-    input_nation = models.TextField()
-    input_period = models.TextField()
 
     movie = models.ForeignKey(
         MovieInfo, on_delete=models.CASCADE, related_name="recommends"
