@@ -9,7 +9,7 @@ class Recommend(models.Model):
     # 유저 구현 후 'accounts.User'로 바꾸기
 
     input_nation = models.CharField(max_length=5)
-    input_period = models.CharField(max_length=14)
+    input_period = models.CharField(max_length=20)
     input_genre = models.TextField()
 
     movie = models.ForeignKey(
@@ -23,4 +23,4 @@ class Recommend(models.Model):
         ordering = ["-pk"]
 
     def __str__(self):
-        return f"{self.id}: {self.user} - {self.movie}"
+        return f"{self.id}: {self.user} - {self.movie.title}"

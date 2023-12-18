@@ -10,7 +10,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-env = environ.Env(DEBUG=(bool, False))
+env = environ.Env(DEBUG=(bool, True))
 
 environ.Env.read_env(BASE_DIR / ".env")
 
@@ -18,7 +18,7 @@ SECRET_KEY = env("SECRET_KEY")
 KMDB_API_KEY = env("KMDB_API_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env("DEBUG") == "True"
+DEBUG = env("DEBUG")
 
 ALLOWED_HOSTS = ["*"]
 
