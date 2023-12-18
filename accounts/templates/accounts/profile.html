@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <h2>프로필</h2>
+  
+  <!-- 프로필 내용 표시 -->
+  {% if user.profile.profile_picture %}
+  <div>
+    <img src="{{ user.profile.profile_picture.url }}" alt="프로필 사진">
+  </div>
+  {% else %}
+  <div>
+    <p>프로필 사진이 없습니다.</p>
+  </div>
+  {% endif %}
+  <p>닉네임 : {{ user.profile.nickname }}</p>
+  <p>태그 : {{ user.profile.tag }}</p>
+  <p>소개 : {{ user.profile.introduction }}</p>
+  <!-- 수정하기 버튼 -->
+  <a href="{% url 'profile_edit' %}">프로필 수정</a>
+  <!-- 로그아웃 버튼 -->
+  <a href="{% url 'logout' %}">로그아웃</a>
+  <!-- 회원탈퇴 버튼 -->
+  <form method="post" action="{% url 'delete_account' user.id %}" onsubmit="return confirm('정말로 탈퇴하시겠습니까?');">
+    {% csrf_token %}
+    <button type="submit" style="color: red;">회원 탈퇴</button>
+  </form>
+{% endblock %}
