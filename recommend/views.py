@@ -3,10 +3,18 @@ from django.conf import settings
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
+from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from .models import Recommend
 from .permissions import RecommendPermission
 from .serializers import RecommendSerializer
+from .schema_examples import (
+    GENERATE_REQUEST,
+    GENERATE_RESPONSE,
+    RECOMMEND_LIST,
+    RECOMMEND_REQUEST,
+    RECOMMEND_RESPONSE,
+)
 from movieinfo.models import MovieInfo
 from movieinfo.serializers import MovieInfoSerializers
 from movieinfo.utils import saveMovieInfo
@@ -16,6 +24,44 @@ import requests
 import pandas as pd
 
 
+@extend_schema_view(
+    generate=extend_schema(  # POST recommend/generate/
+        description="입력값을 토대로 영화를 추천해줍니다. `input_nation`으로 국내, 해외 여부를 입력하고, `input_period`로 2000년대, 2010년대, 2020년대 중 원하는 기간을 입력하고, `input_genre`로 원하는 장르를 입력하면 됩니다. 중복 가능하고, 여러가지를 입력하고 싶으면 `|`로 구분하여 입력하면 됩니다. 그럼 누적관객수 순으로 정렬된 영화 추천 리스트 중에서 영화를 하나 추천해줍니다. **로그인 없이도 이용 가능**하고, **로그인을 하면 본인의 선호장르 태그와 좋아요한 영화도 반영**되어 더욱 본인의 취향에 맞게 추천받을 수 있습니다.",
+        request=RecommendSerializer,
+        responses={200: RecommendSerializer},
+        examples=[GENERATE_REQUEST, GENERATE_RESPONSE],
+    ),
+    list=extend_schema(  # GET recommend/
+        description="요청을 보낸 유저가 저장한 **추천객체들을 전부 가져옵니다.** 추천객체에는 본인이 입력했던 값들과 그것을 이용하여 추천해준 영화가 담겨있습니다. **로그인을 한 유저만 이용 가능**합니다.",
+        request=RecommendSerializer,
+        responses={200: RecommendSerializer},
+        examples=[RECOMMEND_LIST],
+    ),
+    create=extend_schema(  # POST recommend/
+        description="**추천받은 값을 저장**합니다. `recommend/generate/`에서 사용한 `input_nation`, `input_period`, `input_genre`, 그리고 추천받은 영화의 `영화정보객체 id값`을 입력합니다. 그럼 데이터베이스에 저장이 되어, 나중에도 추천받았던 영화들을 볼 수 있습니다. **로그인을 한 유저만 이용 가능**합니다.",
+        request=RecommendSerializer,
+        responses={201: RecommendSerializer},
+        examples=[RECOMMEND_REQUEST, RECOMMEND_RESPONSE],
+    ),
+    retrieve=extend_schema(  # GET recommend/<id>/
+        description="`id`를 이용해서 해당 추천영화 정보를 가져옵니다. **로그인을 한 유저가 본인의 추천영화만** 가져올 수 있습니다.",
+        request=RecommendSerializer,
+        responses={200: RecommendSerializer},
+        examples=[RECOMMEND_RESPONSE],
+    ),
+    partial_update=extend_schema(  # PATCH recommend/<id>/
+        description="`id`를 이용해서 해당 추천영화 객체에 수정된 입력값으로 재추천받은 새로운 영화정보를 업데이트합니다. 전체 수정이 아닌 부분만 수정이 되므로 `PUT`대신 `PATCH`를 이용합니다. **로그인을 한 유저가 본인의 추천영화만 수정**할 수 있습니다.",
+        request=RecommendSerializer,
+        responses={200: RecommendSerializer},
+        examples=[RECOMMEND_REQUEST, RECOMMEND_RESPONSE],
+    ),
+    destroy=extend_schema(  # DELETE recommend/<id>/
+        description="`id`를 이용해서 해당 추천영화 정보를 삭제합니다. **로그인을 한 유저가 본인의 추천영화만 삭제**할 수 있습니다.",
+        request=RecommendSerializer,
+        responses={204: RecommendSerializer},
+    ),
+    update=extend_schema(deprecated=True, exclude=True),
+)
 class RecommendViewSet(ModelViewSet):
     queryset = Recommend.objects.all()
     serializer_class = RecommendSerializer
@@ -41,12 +87,8 @@ class RecommendViewSet(ModelViewSet):
         serializer.save(movie=movie)
 
     # 추천 영화 생성하는 함수
-    @action(detail=False, methods=["POST", "GET"])
+    @action(detail=False, methods=["POST"])
     def generate(self, request):
-        # 포스트 폼 보내기위한 테스트용 (나중에 삭제예정)
-        if request.method == "GET":
-            return Response({"message": "Generate GET"}, status=200)
-
         serializer = RecommendSerializer(data=request.data)
         if serializer.is_valid():
             # 입력값으로 필터링 된 영화 리스트 받아오기
@@ -159,11 +201,11 @@ class RecommendViewSet(ModelViewSet):
 
     # 영화정보 객체 받아오기
     @staticmethod
-    def get_movieinfo(movie_column):
-        movie_title = movie_column.iloc[0]["kmdb제목"]
-        movie_genres = movie_column.iloc[0]["kmdb장르"]
-        movie_id = movie_column.iloc[0]["movie_id"]
-        movie_seq = str(movie_column.iloc[0]["movie_seq"]).zfill(5)
+    def get_movieinfo(movie_row):
+        movie_title = movie_row.iloc[0]["kmdb제목"]
+        movie_genres = movie_row.iloc[0]["kmdb장르"]
+        movie_id = movie_row.iloc[0]["movie_id"]
+        movie_seq = str(movie_row.iloc[0]["movie_seq"]).zfill(5)
 
         movie_info = MovieInfo.objects.filter(
             title=movie_title, genres=movie_genres
