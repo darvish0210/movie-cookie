@@ -219,7 +219,9 @@ class RecommendViewSet(ModelViewSet):
                 response_body = res.content
                 data = json.loads(response_body.decode("utf-8"))
                 saveMovieInfo(data)
-                movie_info = MovieInfo.objects.filter(title=movie_title).first()
+                movie_info = MovieInfo.objects.filter(
+                    title=movie_title, genres=movie_genres
+                ).first()
             else:
                 return Response({"message": "KMDB Error"}, status=400)
         movie = MovieInfoSerializers(movie_info)
