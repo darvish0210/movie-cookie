@@ -276,7 +276,7 @@ class GPTAnalysisViewSet(viewsets.ModelViewSet):
     def partial_update(self, request, *args, **kwargs):
         parse_data = self.ParseRequestData(self.kwargs)
         analysis = GPTAnalysis.objects.get(movie__id=parse_data.movie_id)
-        if analysis.created_at.date() < datetime.date.today():
+        if analysis.updated_at.date() < datetime.date.today():
             if (
                 analysis.num_of_critics
                 < OneLineCritic.objects.filter(movie=parse_data.movie).count()
