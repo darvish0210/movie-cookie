@@ -4,6 +4,7 @@ from rest_framework.validators import ValidationError
 from .models import (
     MovieInfo,
     OneLineCritic,
+    GPTAnalysis,
     TestLikeMovie,
     TestWatchedMovie,
     TestWatchlistMovie,
@@ -48,6 +49,12 @@ class OneLineCriticCreateUpdateSerializers(serializers.ModelSerializer):
         return value
 
 
+class GPTAnalysisSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = GPTAnalysis
+        fields = ["movie", "message", "num_of_critics"]
+
+
 class TestLikeMovieSerializers(serializers.ModelSerializer):
     class Meta:
         model = TestLikeMovie
@@ -55,9 +62,9 @@ class TestLikeMovieSerializers(serializers.ModelSerializer):
 
     def validate(self, value):
         try:
-            print(self._kwargs["data"]["movie_id"])
-            a = TestLikeMovie.objects.get(movie=MovieInfo.objects.get(id=1))
-            print(a)
+            TestLikeMovie.objects.get(
+                movie=MovieInfo.objects.get(id=self._kwargs["data"]["movie_id"])
+            )
         except:
             return value
         raise ValidationError("이미 좋아요를 눌렀습니다.")
@@ -70,9 +77,9 @@ class TestWatchedMovieSerializers(serializers.ModelSerializer):
 
     def validate(self, value):
         try:
-            print(self._kwargs["data"]["movie_id"])
-            a = TestWatchedMovie.objects.get(movie=MovieInfo.objects.get(id=1))
-            print(a)
+            TestWatchedMovie.objects.get(
+                movie=MovieInfo.objects.get(id=self._kwargs["data"]["movie_id"])
+            )
         except:
             return value
         raise ValidationError("이미 등록되어 있습니다.")
@@ -85,9 +92,9 @@ class TestWahtchlistMovieSerializers(serializers.ModelSerializer):
 
     def validate(self, value):
         try:
-            print(self._kwargs["data"]["movie_id"])
-            a = TestWatchlistMovie.objects.get(movie=MovieInfo.objects.get(id=1))
-            print(a)
+            TestWatchlistMovie.objects.get(
+                movie=MovieInfo.objects.get(id=self._kwargs["data"]["movie_id"])
+            )
         except:
             return value
         raise ValidationError("이미 등록되어 있습니다.")
