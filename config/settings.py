@@ -10,7 +10,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-env = environ.Env(DEBUG=(bool, False))
+env = environ.Env(DEBUG=(bool, True))
 
 environ.Env.read_env(BASE_DIR / ".env")
 
@@ -35,13 +35,14 @@ INSTALLED_APPS = [
     # 3rd-party apps
     "rest_framework",
     "rest_framework.authtoken",
-    "dj_rest_auth",
-    "django.contrib.sites",
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
+    "dj_rest_auth",
     "dj_rest_auth.registration",
+    "django.contrib.sites",
     "django_cleanup.apps.CleanupConfig",
+    "drf_spectacular",
     # custom apps
     "movieinfo",
     "recommend",
@@ -62,6 +63,9 @@ MIDDLEWARE = [
     # custom middleware
     "allauth.account.middleware.AccountMiddleware",
 ]
+
+CORS_ORIGIN_ALLOW_ALL = True
+CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = "config.urls"
 
@@ -135,8 +139,7 @@ STATIC_URL = "/static/"
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
-if not DEBUG:
-    STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
@@ -153,6 +156,13 @@ REST_FRAMEWORK = {
         "rest_framework.renderers.JSONRenderer",
         "rest_framework.renderers.BrowsableAPIRenderer",
     ],
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
 SITE_ID = 1
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Movie Cookie",
+    "DESCRIPTION": "이 API는 Movie Cookie 사이트에서 이용하는 API입니다. 회원관리, 커뮤니티, 영화정보, 영화추천의 기능이 있습니다.",
+    "VERSION": "1.0.0",
+}
