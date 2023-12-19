@@ -1,5 +1,6 @@
 import json
 import re
+import datetime
 
 # 테스트를 위한 csrf exempt
 
@@ -14,6 +15,7 @@ from . import utils
 from .models import (
     MovieInfo,
     OneLineCritic,
+    GPTAnalysis,
     TestLikeMovie,
     TestWatchedMovie,
     TestWatchlistMovie,
@@ -22,10 +24,12 @@ from .serializers import (
     MovieInfoSerializers,
     OneLineCriticSerializers,
     OneLineCriticCreateUpdateSerializers,
+    GPTAnalysisSerializers,
     TestLikeMovieSerializers,
     TestWahtchlistMovieSerializers,
     TestWatchedMovieSerializers,
 )
+from .detail_summary_with_GPT import send_data_to_GPT as GPT
 
 
 class SerachMovieAPIView(APIView):
@@ -120,7 +124,6 @@ class OneLineCriticViewSet(viewsets.ModelViewSet):
         req = self.request.data
         content = req["content"]
         starpoint = req["starpoint"]
-        print(self.kwargs["movie_id"])
         serializer.save(
             content=content,
             starpoint=starpoint,
@@ -144,8 +147,27 @@ class UserLWWViewSet(viewsets.ModelViewSet):
 
     queryset = TestLikeMovie.objects.all()
     serializer_class = TestLikeMovieSerializers
-
     # authentication_classes = ()
+
+    def list(self, request, *args, **kwargs):
+        pk = self.kwargs["movie_id"]
+        mode = kwargs["mode"]
+
+        if mode == "like":
+            queryset = TestLikeMovie.objects.filter(movie__id=pk)
+            serializer = TestLikeMovieSerializers(queryset, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        elif mode == "watchlist":
+            queryset = TestWatchlistMovie.objects.filter(movie__id=pk)
+            serializer = TestWahtchlistMovieSerializers(queryset, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        elif mode == "watched":
+            queryset = TestWatchedMovie.objects.filter(movie__id=pk)
+            serializer = TestWatchedMovieSerializers(queryset, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            errorMessage = {"message": "잘못된 응답입니다."}
+            return Response(errorMessage, status=status.HTTP_400_BAD_REQUEST)
 
     def create(self, request, *args, **kwargs):
         movie_id = kwargs["movie_id"]
@@ -205,3 +227,70 @@ class UserLWWViewSet(viewsets.ModelViewSet):
         else:
             errorMessage = {"message": "잘못된 응답입니다."}
             return Response(errorMessage, status=status.HTTP_400_BAD_REQUEST)
+
+
+class GPTAnalysisViewSet(viewsets.ModelViewSet):
+    queryset = GPTAnalysis.objects.all()
+    serializer_class = GPTAnalysisSerializers
+    http_method_names = ["get", "post", "head", "patch", "delete"]  # allowed methods
+
+    def list(self, request, *args, **kwargs):
+        return Response(status=status.HTTP_200_OK)
+
+    class ParseRequestData:
+        def __init__(self, input_data):
+            try:
+                self.pk = input_data["pk"]
+            except:
+                self.pk = ""
+            self.movie_id = input_data["movie_id"]
+            self.movie = MovieInfo.objects.get(id=input_data["movie_id"])
+            self.num_of_critics = OneLineCritic.objects.filter(movie=self.movie).count()
+            self.message = ""
+
+        def get_gpt_analysis(self):
+            self.message = GPT(self.movie_id)
+
+        def to_dict(self):
+            data = {
+                "movie": self.movie_id,
+                "message": self.message,
+                "num_of_critics": self.num_of_critics,
+            }
+            return data
+
+    def create(self, request, *args, **kwargs):
+        parse_data = self.ParseRequestData(self.kwargs)
+
+        try:
+            GPTAnalysis.objects.get(movie__id=parse_data.movie_id)
+            errorMessage = {"message": "해당 영화에 대한 메시지는 이미 존재합니다."}
+            return Response(errorMessage, status=status.HTTP_400_BAD_REQUEST)
+        except:
+            parse_data.get_gpt_analysis()
+            serializer = self.get_serializer(data=parse_data.to_dict())
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def partial_update(self, request, *args, **kwargs):
+        parse_data = self.ParseRequestData(self.kwargs)
+        analysis = GPTAnalysis.objects.get(movie__id=parse_data.movie_id)
+        if analysis.updated_at.date() < datetime.date.today():
+            if (
+                analysis.num_of_critics
+                < OneLineCritic.objects.filter(movie=parse_data.movie).count()
+            ):
+                instance = GPTAnalysis.objects.get(
+                    Q(id=parse_data.pk) & Q(movie__id=parse_data.movie_id)
+                )
+                parse_data.get_gpt_analysis()
+                serializer = self.get_serializer(
+                    instance=instance, data=parse_data.to_dict(), partial=True
+                )
+                serializer.is_valid(raise_exception=True)
+                self.perform_update(serializer)
+                return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+
+        errorMessage = {"message": "수정 조건이 맞지 않아 수정하지 않습니다."}
+        return Response(errorMessage, status=status.HTTP_400_BAD_REQUEST)

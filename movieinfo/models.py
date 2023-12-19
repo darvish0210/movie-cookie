@@ -28,6 +28,15 @@ class OneLineCritic(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
 
+class GPTAnalysis(models.Model):
+    id = models.AutoField(primary_key=True)
+    movie = models.OneToOneField("MovieInfo", on_delete=models.CASCADE)
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    num_of_critics = models.IntegerField(blank=True, null=True)
+
+
 class TestLikeMovie(models.Model):
     id = models.AutoField(primary_key=True)
     movie = models.ForeignKey("MovieInfo", on_delete=models.CASCADE)
