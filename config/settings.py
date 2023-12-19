@@ -47,7 +47,9 @@ INSTALLED_APPS = [
     "movieinfo",
     "recommend",
     "community",
-    "accounts",
+    "accounts_signup",
+    "accounts_login",
+    "accounts_jwt",
 ]
 
 MIDDLEWARE = [

@@ -16,7 +16,9 @@ urlpatterns = [
     path("movieinfo/", include("movieinfo.urls")),
     path("recommend/", include("recommend.urls")),
     path("community/", include("community.urls")),
-    path("accounts/", include("accounts.urls")),
+    path("accounts/signup/", include("accounts_signup.urls")),
+    path("accounts/login/", include("accounts_login.urls")),
+    path("accounts/jwt/", include("accounts_jwt.urls")),
     # DRF-Spectacular URL
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(

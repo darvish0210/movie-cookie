@@ -1,12 +1,12 @@
-{% extends 'base.html' %}
-
 {% block content %}
-    <h2>프로필 편집</h2>
-    <form method="post" enctype="multipart/form-data">
+<h2>프로필 편집</h2>
+<form method="post" enctype="multipart/form-data">
     {% csrf_token %}
 
     <div>
-        <label for="{{ form.profile_picture.id_for_label }}">프로필 사진 변경:</label>
+        <label for="{{ form.profile_picture.id_for_label }}"
+            >프로필 사진 변경:</label
+        >
         {{ form.profile_picture }}
     </div>
 
@@ -26,5 +26,5 @@
     </div>
 
     <button type="submit">저장하기</button>
-    </form>
+</form>
 {% endblock %}
