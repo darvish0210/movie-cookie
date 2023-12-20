@@ -14,7 +14,9 @@ class MovieInfo(models.Model):
     plot = models.TextField(blank=True, null=True)
     runtime = models.IntegerField(blank=True, null=True)
     rating = models.TextField(blank=True, null=True)
-    genres = models.ManyToManyField("Genre", related_name="movieinfo")
+    genres = models.ManyToManyField(
+        "Genre", related_name="movieinfo", blank=True, null=True
+    )
     releaseDate = models.DateField(blank=True, null=True)
 
 
