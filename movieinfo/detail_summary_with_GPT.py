@@ -5,7 +5,7 @@ from pathlib import Path
 import environ
 from openai import OpenAI
 
-from .models import MovieInfo, OneLineCritic
+from .models import MovieInfo, OneLineCritic, Genre
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 env = environ.Env(DEBUG=(bool, False))
@@ -65,12 +65,18 @@ def send_data_to_GPT(movie_id):
         critic_msg += f"{ciritic.content}|"
     critic_msg = critic_msg[:-1]
 
+    genre_string = ""
+
+    for genre in movie.genres.all():
+        genre_string += f"{Genre.objects.get(genre=genre)}, "
+
+    genre_string = genre_string[:-2]
+
     data = {
         "title": movie.title,
         "plot": movie.plot,
-        "genre": re.sub(r"\|", ", ", movie.genres),
+        "genre": genre_string,
         "critics": critic_msg,
     }
-    # print(data)
     message = create_GPT_report(data)
     return message
