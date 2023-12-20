@@ -36,13 +36,13 @@ class SerachMovieAPIView(APIView):
     def post(self, request):
         query = json.loads(request.body)["query"]
         query = re.sub(" ", "", query)
-        res = utils.getMovieInfo(query)
+        res = utils.get_movie_info(query)
 
         if res.status_code == 200:
             data = res.data
             if data["Data"][0]["Count"] == 0:
                 return Response({"message": "검색 결과가 없습니다."})
-            utils.saveMovieInfo(data)
+            utils.save_movie_info(data)
 
         queryset = MovieInfo.objects.filter(Q(searchTitle__icontains=query))
         serializer = MovieInfoSerializers(queryset, many=True)
