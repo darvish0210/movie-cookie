@@ -14,7 +14,7 @@ class MovieInfo(models.Model):
     plot = models.TextField(blank=True, null=True)
     runtime = models.IntegerField(blank=True, null=True)
     rating = models.TextField(blank=True, null=True)
-    genres = models.TextField(blank=True, null=True)
+    genres = models.ManyToManyField("Genre", related_name="movieinfo")
     releaseDate = models.DateField(blank=True, null=True)
 
 
@@ -35,6 +35,20 @@ class GPTAnalysis(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     num_of_critics = models.IntegerField(blank=True, null=True)
+
+
+class Genre(models.Model):
+    id = models.AutoField(primary_key=True)
+    genre = models.CharField(max_length=16, unique=True)
+    slug = models.SlugField(
+        max_length=200, db_index=True, unique=True, allow_unicode=True
+    )
+
+    def __str__(self):
+        return self.genre
+
+    def get_absolute_url(self):
+        return f"/movieinfo/genre/{self.slug}"
 
 
 class TestLikeMovie(models.Model):
