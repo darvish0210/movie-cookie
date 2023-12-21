@@ -15,12 +15,14 @@ class MovieInfoSerializers(serializers.ModelSerializer):
     class Meta:
         model = MovieInfo
         fields = "__all__"
+        depth = 1
 
 
 class OneLineCriticSerializers(serializers.ModelSerializer):
     class Meta:
         model = OneLineCritic
         fields = "__all__"
+        depth = 1
 
 
 class OneLineCriticCreateUpdateSerializers(serializers.ModelSerializer):
