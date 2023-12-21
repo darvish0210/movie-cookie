@@ -1,20 +1,27 @@
 # recommend/models.py
 from django.db import models
-from movieinfo.models import MovieInfo
-from django.contrib.auth.models import User
 
 
 class Recommend(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="recommends")
-    # 유저 구현 후 'accounts.User'로 바꾸기
-
-    input_nation = models.CharField(max_length=5)
-    input_period = models.CharField(max_length=20)
-    input_genre = models.TextField()
-
-    movie = models.ForeignKey(
-        MovieInfo, on_delete=models.CASCADE, related_name="recommends"
+    # 추천받은 유저
+    user = models.ForeignKey(
+        "accounts.User", on_delete=models.CASCADE, related_name="recommends"
     )
+
+    # input 값들
+    genre = models.ManyToManyField("movieinfo.Genre", related_name="recommends")
+    nation_korean = models.BooleanField(default=False)
+    nation_foreign = models.BooleanField(default=False)
+    period_2000 = models.BooleanField(default=False)
+    period_2010 = models.BooleanField(default=False)
+    period_2020 = models.BooleanField(default=False)
+
+    # 추천된 영화
+    movie = models.ForeignKey(
+        "movieinfo.MovieInfo", on_delete=models.CASCADE, related_name="recommends"
+    )
+    movie_title = models.TextField()
+    poster_url = models.URLField(max_length=400, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateField(auto_now=True)
