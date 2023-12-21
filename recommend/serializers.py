@@ -2,8 +2,6 @@
 from rest_framework.serializers import (
     ModelSerializer,
     IntegerField,
-    CharField,
-    URLField,
     RelatedField,
     ValidationError,
 )
@@ -26,15 +24,14 @@ class GenreRelatedField(RelatedField):
 
 
 class RecommendSerializer(ModelSerializer):
-    genre = GenreRelatedField(queryset=Genre.objects.all(), many=True)
-    # generate 요청에서는 사용X, 응답으로 받아서 객체 저장 요청 시 사용
+    # movie_id: generate 요청에서는 사용X, 응답으로 받아서 객체 저장 요청 시 사용
     movie_id = IntegerField(required=False)
-    movie_title = CharField(required=False)
-    poster_url = URLField(required=False)
+    genre = GenreRelatedField(queryset=Genre.objects.all(), many=True)
 
     class Meta:
         model = Recommend
         fields = [
+            "id",
             "user",
             "genre",
             "nation_korean",

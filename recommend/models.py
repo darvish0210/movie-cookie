@@ -20,7 +20,7 @@ class Recommend(models.Model):
     movie = models.ForeignKey(
         "movieinfo.MovieInfo", on_delete=models.CASCADE, related_name="recommends"
     )
-    movie_title = models.TextField()
+    movie_title = models.TextField(blank=True)
     poster_url = models.URLField(max_length=400, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
