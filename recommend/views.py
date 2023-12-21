@@ -152,7 +152,7 @@ class RecommendViewSet(ModelViewSet):
         period_2010,
         period_2020,
     ):
-        # nation - 국내, 해외, 국내|해외 여부에 따라 CSV 파일 선택
+        # nation - 국내, 해외 여부에 따라 CSV 파일 추가
         movies_data = pd.DataFrame()
         if nation_korean:
             movies_data = pd.concat([movies_data, pd.read_csv("static/korean.csv")])
@@ -184,7 +184,7 @@ class RecommendViewSet(ModelViewSet):
         if movies_data.empty:
             return Response({"message": "Invalid input_period value"}, status=400)
 
-        # genres - 장르를 |로 나눠서 영화 필터링
+        # genres - 장르 조건에 따른 필터링
         movies_list = pd.DataFrame()
         for genre in genres:
             genre = genre.genre
@@ -233,7 +233,8 @@ class RecommendViewSet(ModelViewSet):
         movie_seq = str(movie_row.iloc[0]["movie_seq"]).zfill(5)
         docid = movie_id + movie_seq
         movie_info = MovieInfo.objects.filter(docid=docid).first()
-        if not movie_info:  # 기존 DB에 없을 경우 새로 요청 후 저장하고 불러옴
+        # 기존 DB에 없을 경우 새로 요청 후 저장하고 불러옴
+        if not movie_info:
             # 영화 정보 KMDB API 요청
             KMDB_API_KEY = str(settings.KMDB_API_KEY)
             url = f"https://api.koreafilm.or.kr/openapi-data2/wisenut/search_api/search_json2.jsp?collection=kmdb_new2&ServiceKey={KMDB_API_KEY}&detail=Y&listCount=1&movieId={movie_id}&movieSeq={movie_seq}"
