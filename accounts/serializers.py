@@ -13,17 +13,17 @@ class UserSerializer(serializers.ModelSerializer):
             "email",
             "password",
             "nickname",
-            "ganre",
+            "genre",
             "bio",
             "profile_picture",
         )
         extra_kwargs = {"password": {"write_only": True}}
 
     def create(self, validated_data):
-        ganre_data = validated_data.pop("ganre", None)
+        genre_data = validated_data.pop("genre", None)
         user = User.objects.create_user(**validated_data)
         # 다 대 다 직접할당 x
-        if ganre_data:
-            user.ganre.set(ganre_data)
+        if genre_data:
+            user.genre.set(genre_data)
 
         return user
