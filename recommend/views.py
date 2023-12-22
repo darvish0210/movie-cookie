@@ -67,30 +67,48 @@ class RecommendViewSet(ModelViewSet):
     serializer_class = RecommendSerializer
     permission_classes = [RecommendPermission]
 
-    # 해당 유저의 객체만 조회
     def get_queryset(self):
+        """
+        이 함수는 요청 보내는 유저의 추천객체만 조회하기 위해 필터링하는 역할을 합니다.
+        """
         qs = super().get_queryset()
         qs = qs.filter(user=self.request.user)
         return qs
 
-    # 추천객체 저장 시 유저, 영화 추가
     def perform_create(self, serializer):
+        """
+        이 함수는 추천객체를 저장할 때 호출되는 `create` 함수에서 객체에 저장하는 역할을 하는데, `serializer`에 유저 정보와 영화 정보를 같이 저장해줍니다.\n
+        유저 정보가 필요하므로 로그인 된 유저만 이용 가능합니다.\n
+        (비로그인 유저는 이 함수 대신 프론트엔드에서 로컬 스토리지에 임시로 저장합니다.)
+        """
         movie_id = serializer.validated_data.get("movie_id")
         user = self.request.user
         movie = MovieInfo.objects.get(id=movie_id)
         serializer.save(user=user, movie=movie)
 
-    # 추천객체 수정 시 새로운 추천영화로 변경
     def perform_update(self, serializer):
+        """
+        이 함수는 추천객체를 수정할 때 호출되는 `partial_update` 함수에서 객체에 수정된 데이터를 저장하는 역할을 하는데, `serializer`에 영화 정보를 같이 저장해줍니다.\n
+        로그인을 한 유저가 본인의 추천객체만 수정할 수 있습니다.
+        """
         movie_id = serializer.validated_data.get("movie_id")
         movie = MovieInfo.objects.get(id=movie_id)
         serializer.save(movie=movie)
 
-    # 추천 영화 생성하는 함수
     @action(detail=False, methods=["POST", "GET"])
     def generate(self, request):
+        """
+        이 함수는 추천 영화를 생성하는 함수입니다.\n
+        로그인 여부에 상관 없이 이용 가능하고 `POST`요청만 받습니다.\n
+        입력값들로 필터링 된 `추천영화 리스트`를 가져와서,
+        유저가 로그인 되어있을 경우엔 유저의 선호에 따른 `가중치` 값을 추가하고,
+        `가중치`가 높은 순, `누적관객수`가 높은 순으로 리스트를 정렬합니다.\n
+        정렬 후, 상위 10개의 영화 중 하나를 랜덤으로 골라 추천해줍니다.
+        """
+        # GET: 테스트용 (가중치 연결 완료 후 삭제예정)
         if request.method == "GET":
             return Response({"message": "Generate GET"}, status=200)
+
         serializer = RecommendSerializer(data=request.data)
         if serializer.is_valid():
             # 입력값으로 필터링 된 영화 리스트 받아오기
@@ -108,6 +126,8 @@ class RecommendViewSet(ModelViewSet):
                 period_2010,
                 period_2020,
             )
+            if isinstance(selected_movies, Response):
+                return selected_movies
 
             # 유저가 로그인한 경우 선호 장르와 좋아요한 영화 정보로 가중치 높이기
             if request.user.is_authenticated:
@@ -123,7 +143,9 @@ class RecommendViewSet(ModelViewSet):
             top_10 = selected_movies.head(10)
             pick = top_10.sample(n=1)
             movie = self.get_movieinfo(pick)
-            poster_id = movie.data["posters"][0]
+            if not movie.data["docid"]:
+                return Response({"detail": "KMDB API 에러입니다. 나중에 시도해주세요."}, status=400)
+            poster_id = movie.data["posters"][0]["id"]
             poster_url = Poster.objects.get(id=poster_id).url
 
             # 모델 형식에 맞게 리턴
@@ -142,7 +164,6 @@ class RecommendViewSet(ModelViewSet):
         else:
             return Response(serializer.errors, status=400)
 
-    # 입력값으로 추천영화 csv파일을 필터링해서 리턴
     @staticmethod
     def get_movie_list(
         genres,
@@ -152,6 +173,14 @@ class RecommendViewSet(ModelViewSet):
         period_2010,
         period_2020,
     ):
+        """
+        이 함수는 입력값으로 추천영화 csv파일을 필터링해서 리턴해주는 함수입니다.\n
+        먼저, 불리언값인 `nation_korean`, `nation_foreign`값을 통해 `True` 여부에 따라 국내영화, 해외영화 `csv`파일을 불러옵니다.\n
+        그 다음, 불리언값인 `period_2000`, `period_2010`, `period_2020`값을 통해 `2000년대`, `2010년대`, `2020년대` 중 `True`인 시대에 개봉한 영화들을 필터링합니다.\n
+        마지막으로 `genres`를 통해 유저가 입력한 장르를 하나라도 포함하는 영화만 필터링합니다.\n
+        세 가지 필터링 모두 `중복 선택이 가능`합니다.\n
+        필터링 후, 중복을 제거하고 미리 가중치 컬럼을 생성한 후 리턴합니다.
+        """
         # nation - 국내, 해외 여부에 따라 CSV 파일 추가
         movies_data = pd.DataFrame()
         if nation_korean:
@@ -159,7 +188,7 @@ class RecommendViewSet(ModelViewSet):
         if nation_foreign:
             movies_data = pd.concat([movies_data, pd.read_csv("static/foreign.csv")])
         if movies_data.empty:
-            return Response({"message": "Invalid input_nation value"}, status=400)
+            return Response({"detail": "하나 이상의 국가를 선택해주세요."}, status=400)
 
         # period - 개봉연도 조건에 따른 필터링
         movies_period = pd.DataFrame()
@@ -182,7 +211,7 @@ class RecommendViewSet(ModelViewSet):
             )
         movies_data = movies_period
         if movies_data.empty:
-            return Response({"message": "Invalid input_period value"}, status=400)
+            return Response({"detail": "하나 이상의 시대를 선택해주세요."}, status=400)
 
         # genres - 장르 조건에 따른 필터링
         movies_list = pd.DataFrame()
@@ -195,18 +224,23 @@ class RecommendViewSet(ModelViewSet):
                 ]
             )
         if movies_list.empty:
-            return Response({"message": "Invalid input_genre value"}, status=400)
+            return Response({"detail": "하나 이상의 장르를 선택해주세요."}, status=400)
 
         # 중복 제거, 가중치 컬럼 생성
         movies_list = movies_list.drop_duplicates(subset="번호")
         movies_list["가중치"] = 0
         return movies_list
 
-    # 유저의 선호장르태그, 좋아요한 영화에 따른 가중치 부여
     @staticmethod
     def update_weight(user, movie_list):
+        """
+        로그인을 한 유저의 경우, 유저의 `선호장르`, `좋아요한 영화`에 따른 `가중치`를 이 함수를 통해 부여할 수 있습니다.\n
+        추천영화 리스트의 각 영화들에 대해서, 그 영화의 장르에 유저가 선호하는 장르가 포함되어 있다면 그 영화는 `+3`의 가중치를 얻습니다.\n
+        또한 그 영화의 장르에 유저가 좋아요를 누른 영화들의 장르가 포함되어 있다면 그 영화는 `+1`의 가중치를 얻습니다.\n
+        유저가 좋아요를 누른 영화들의 장르보다 직접 선호를 표시한 장르가 좀 더 유저의 취향에 맞으므로 높은 가중치를 갖도록 설정하였습니다.
+        """
         # accounts 모델 내용에 따라 달라질 예정
-        # 선호장르태그 - 일단 genre로 연결
+        # 선호장르태그 - user의 genre로 연결
         user_genres = user.genre.all() if user.genre.all() else []
         # 좋아요한 영화 - LikeMovie의 user의 related name (수정예정)
         user_liked_movies = user.likes.all()
@@ -226,9 +260,13 @@ class RecommendViewSet(ModelViewSet):
 
         return movie_list
 
-    # 영화정보 객체 받아오기
     @staticmethod
     def get_movieinfo(movie_row):
+        """
+        이 함수는 추천된 영화의 영화정보를 가져오는 함수입니다.\n
+        기존 데이터베이스에 있는지 확인을 먼저 하고, 없으면 `KMDB API`로 요청을 보내서 응답받은 영화의 정보를 `MovieInfo`객체에 저장합니다.\n
+        그 후 추천된 영화에 대한 `MovieInfo` 정보를 리턴합니다.
+        """
         movie_id = movie_row.iloc[0]["movie_id"]
         movie_seq = str(movie_row.iloc[0]["movie_seq"]).zfill(5)
         docid = movie_id + movie_seq
@@ -245,6 +283,6 @@ class RecommendViewSet(ModelViewSet):
                 save_movie_info(data)
                 movie_info = MovieInfo.objects.filter(docid=docid).first()
             else:
-                return Response({"message": "KMDB Error"}, status=400)
+                return None
         movie = MovieInfoSerializers(movie_info)
         return movie
