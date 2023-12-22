@@ -1,7 +1,7 @@
-from rest_framework import generics
+from rest_framework import generics, permissions, viewsets
 from .serializers import UserSerializer
 from django.contrib.auth import get_user_model
-from rest_framework import permissions
+from .permissions import IsOwnerOrReadOnly
 
 User = get_user_model()
 
@@ -12,6 +12,12 @@ class UserCreateView(generics.CreateAPIView):
     permission_classes = [permissions.AllowAny]
 
 
-class UserDetailView(generics.RetrieveAPIView):
+class UserProfileViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
+
+    def get_permissions(self):
+        if self.action == "create":
+            return [permissions.AllowAny()]
+        return super().get_permissions()
