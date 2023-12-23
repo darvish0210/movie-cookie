@@ -2,9 +2,6 @@ import json
 import re
 import datetime
 
-# 테스트를 위한 csrf exempt
-
-from django.shortcuts import render
 from django.db.models import Q
 from rest_framework import viewsets
 from rest_framework import status
