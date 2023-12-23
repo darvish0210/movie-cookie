@@ -32,6 +32,10 @@ def save_movie_info(data):
         searchTitle = re.sub(r" ", "", title)
         docid = data["Data"][0]["Result"][i]["DOCID"]
 
+        genres = data["Data"][0]["Result"][i]["genre"]
+        if re.match(r"에로", genres):
+            continue
+
         try:
             MovieInfo.objects.get(searchTitle=searchTitle)
         except:
@@ -82,7 +86,7 @@ def save_movie_info(data):
 
             for vod in data["Data"][0]["Result"][i]["vods"]["vod"]:
                 title = vod["vodClass"]
-                url = vod["vodUrl"]
+                url = re.sub(r"trailerPlayPop\?pFileNm=", "play/", vod["vodUrl"])
                 if title and url:
                     db_vod = Vod(title=title, url=url)
                     db_vod.save()
@@ -122,9 +126,6 @@ def save_movie_info(data):
                         db_company = Company.objects.get(name=company)
                         new_data.companies.add(db_company)
 
-            genres = data["Data"][0]["Result"][i]["genre"]
-            if re.match(r"에로", genres):
-                continue
             genres = re.split(", *", genres)
             for genre in genres:
                 if genre:
