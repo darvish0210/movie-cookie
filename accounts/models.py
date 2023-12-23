@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-from movieinfo.models import Genre
+from movieinfo.models import Genre, MovieInfo
 
 
 class User(AbstractUser):
@@ -14,16 +14,14 @@ class User(AbstractUser):
 
 class LikeMovie(models.Model):
     id = models.AutoField(primary_key=True)
-    movie = models.ForeignKey(
-        "MovieInfo", on_delete=models.CASCADE, related_name="likes"
-    )
+    movie = models.ForeignKey(MovieInfo, on_delete=models.CASCADE, related_name="likes")
     user = models.ForeignKey("User", on_delete=models.CASCADE, related_name="likes")
 
 
 class WatchedMovie(models.Model):
     id = models.AutoField(primary_key=True)
     movie = models.ForeignKey(
-        "MovieInfo", on_delete=models.CASCADE, related_name="watcheds"
+        MovieInfo, on_delete=models.CASCADE, related_name="watcheds"
     )
     user = models.ForeignKey("User", on_delete=models.CASCADE, related_name="watcheds")
 
@@ -31,7 +29,7 @@ class WatchedMovie(models.Model):
 class WatchlistMovie(models.Model):
     id = models.AutoField(primary_key=True)
     movie = models.ForeignKey(
-        "MovieInfo", on_delete=models.CASCADE, related_name="watchlists"
+        MovieInfo, on_delete=models.CASCADE, related_name="watchlists"
     )
     user = models.ForeignKey(
         "User", on_delete=models.CASCADE, related_name="watchlists"
