@@ -132,7 +132,7 @@ class RecommendViewSet(ModelViewSet):
             # 유저가 로그인한 경우 선호 장르와 좋아요한 영화 정보로 가중치 높이기
             if request.user.is_authenticated:
                 user = request.user
-                # selected_movies = self.update_weight(user, selected_movies)
+                selected_movies = self.update_weight(user, selected_movies)
 
             # 가중치, 관객수 기준으로 내림차순 정렬
             selected_movies = selected_movies.sort_values(
@@ -239,11 +239,10 @@ class RecommendViewSet(ModelViewSet):
         또한 그 영화의 장르에 유저가 좋아요를 누른 영화들의 장르가 포함되어 있다면 그 영화는 `+1`의 가중치를 얻습니다.\n
         유저가 좋아요를 누른 영화들의 장르보다 직접 선호를 표시한 장르가 좀 더 유저의 취향에 맞으므로 높은 가중치를 갖도록 설정하였습니다.
         """
-        # accounts 모델 내용에 따라 달라질 예정
         # 선호장르태그 - user의 genre로 연결
         user_genres = user.genre.all() if user.genre.all() else []
-        # 좋아요한 영화 - LikeMovie의 user의 related name (수정예정)
-        user_liked_movies = user.likes.all()
+        # 좋아요한 영화 - LikeMovie의 user의 related name
+        user_liked_movies = user.likes.all() if user.likes.all() else []
 
         # 선호장르 가중치 부여
         for genre in user_genres:

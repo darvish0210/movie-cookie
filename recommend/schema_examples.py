@@ -61,6 +61,7 @@ RECOMMEND_RESPONSE = OpenApiExample(
         "movie_title": "알라딘",
         "poster_url": "http://file.koreafilm.or.kr/thm/02/00/05/16/tn_DPF018168.jpg",
         "movie": 4,
+        "created_at": "2023-12-21T16:09:51.471721+09:00",
     },
 )
 
@@ -81,6 +82,7 @@ RECOMMEND_LIST = OpenApiExample(
             "movie_title": "과속스캔들",
             "poster_url": "http://file.koreafilm.or.kr/thm/02/00/03/80/tn_DPK09869A.jpg",
             "movie": 5,
+            "created_at": "2023-12-21T16:11:28.448801+09:00",
         },
         {
             "id": 1,
@@ -95,6 +97,7 @@ RECOMMEND_LIST = OpenApiExample(
             "movie_title": "알라딘",
             "poster_url": "http://file.koreafilm.or.kr/thm/02/00/05/16/tn_DPF018168.jpg",
             "movie": 4,
+            "created_at": "2023-12-21T16:09:51.471721+09:00",
         },
     ],
 )

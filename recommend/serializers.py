@@ -55,5 +55,6 @@ class RecommendSerializer(ModelSerializer):
             "movie_title",
             "poster_url",
             "movie",
+            "created_at",
         ]
         read_only_fields = ("user", "movie")
