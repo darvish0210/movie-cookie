@@ -18,9 +18,7 @@ class MovieInfo(models.Model):
     rating = models.TextField(blank=True, null=True)
     genres = models.ManyToManyField("Genre", blank=True, related_name="movieinfo")
     release_date = models.DateField(blank=True, null=True)
-    
 
-    
 
 class OneLineCritic(models.Model):
     id = models.AutoField(primary_key=True)
@@ -90,19 +88,3 @@ class Genre(models.Model):
 
     def get_absolute_url(self):
         return f"/movieinfo/genre/{self.slug}"
-
-
-# for test
-class TestLikeMovie(models.Model):
-    id = models.AutoField(primary_key=True)
-    movie = models.ForeignKey("MovieInfo", on_delete=models.CASCADE)
-
-
-class TestWatchedMovie(models.Model):
-    id = models.AutoField(primary_key=True)
-    movie = models.ForeignKey("MovieInfo", on_delete=models.CASCADE)
-
-
-class TestWatchlistMovie(models.Model):
-    id = models.AutoField(primary_key=True)
-    movie = models.ForeignKey("MovieInfo", on_delete=models.CASCADE)
