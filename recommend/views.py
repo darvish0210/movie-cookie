@@ -105,10 +105,6 @@ class RecommendViewSet(ModelViewSet):
         `가중치`가 높은 순, `누적관객수`가 높은 순으로 리스트를 정렬합니다.\n
         정렬 후, 상위 10개의 영화 중 하나를 랜덤으로 골라 추천해줍니다.
         """
-        # GET: 테스트용 (가중치 연결 완료 후 삭제예정)
-        if request.method == "GET":
-            return Response({"message": "Generate GET"}, status=200)
-
         serializer = RecommendSerializer(data=request.data)
         if serializer.is_valid():
             # 입력값으로 필터링 된 영화 리스트 받아오기
@@ -145,8 +141,11 @@ class RecommendViewSet(ModelViewSet):
             movie = self.get_movieinfo(pick)
             if not movie.data["docid"]:
                 return Response({"detail": "KMDB API 에러입니다. 나중에 시도해주세요."}, status=400)
-            poster_id = movie.data["posters"][0]["id"]
-            poster_url = Poster.objects.get(id=poster_id).url
+            if movie.data["posters"][0]:
+                poster_id = movie.data["posters"][0]["id"]
+                poster_url = Poster.objects.get(id=poster_id).url
+            else:
+                poster_url = None
 
             # 모델 형식에 맞게 리턴
             recommended_data = {
