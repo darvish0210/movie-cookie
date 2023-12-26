@@ -18,6 +18,7 @@ from accounts.models import LikeMovie, WatchedMovie, WatchlistMovie
 from .serializers import (
     MovieInfoSerializers,
     OneLineCriticSerializers,
+    OneLineCriticSaveSerializers,
     OneLineCriticCreateUpdateSerializers,
     GPTAnalysisSerializers,
     LikeMovieSerializers,
@@ -66,7 +67,7 @@ class OneLineCriticViewSet(viewsets.ModelViewSet):
         data = request.data
         data["author"] = User.objects.get(username=request.user).pk
         data["movie"] = self.kwargs["movie_id"]
-        serializer = self.get_serializer(data=data)
+        serializer = OneLineCriticSaveSerializers(data=data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
