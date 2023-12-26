@@ -61,6 +61,45 @@ class OneLineCriticSerializers(serializers.ModelSerializer):
         raise ValidationError("잘못된 접근입니다.")
 
 
+class OneLineCriticSaveSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = OneLineCritic
+        fields = [
+            "id",
+            "content",
+            "starpoint",
+            "created_at",
+            "updated_at",
+            "author",
+            "movie",
+        ]
+
+    def validate_content(self, value):
+        if len(value) <= 3:
+            raise ValidationError("내용이 너무 짧습니다.")
+        return value
+
+    def validate_starpoint(self, value):
+        if not value:
+            raise ValidationError("별점을 입력하지 않았습니다.")
+
+        if value < 0 or value > 5:
+            raise ValidationError("잘못된 별점 입력입니다.")
+        return value
+
+    def validate(self, value):
+        try:
+            a = OneLineCritic.objects.get(
+                Q(author=User.objects.get(id=self._kwargs["data"]["author"]))
+                & Q(movie=MovieInfo.objects.get(id=self._kwargs["data"]["movie"]))
+            )
+
+            print(a)
+        except:
+            return value
+        raise ValidationError("잘못된 접근입니다.")
+
+
 class OneLineCriticCreateUpdateSerializers(serializers.ModelSerializer):
     class Meta:
         model = OneLineCritic
