@@ -14,10 +14,26 @@ class MovieInfoSerializers(serializers.ModelSerializer):
         depth = 1
 
 
+class ExceptSensitiveInfoUserSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["id", "username", "nickname", "profile_picture"]
+
+
 class OneLineCriticSerializers(serializers.ModelSerializer):
+    author = ExceptSensitiveInfoUserSerializers()
+
     class Meta:
         model = OneLineCritic
-        fields = "__all__"
+        fields = [
+            "id",
+            "content",
+            "starpoint",
+            "created_at",
+            "updated_at",
+            "author",
+            "movie",
+        ]
 
     def validate_content(self, value):
         if len(value) <= 3:
