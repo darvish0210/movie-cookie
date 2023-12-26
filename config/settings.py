@@ -163,7 +163,6 @@ AUTH_USER_MODEL = "accounts.User"
 REST_USE_JWT = True  # JWT 사용 여부
 JWT_AUTH_COOKIE = "my-app-auth"  # 호출할 Cookie Key 값
 JWT_AUTH_REFRESH_COOKIE = "my-refresh-token"  # Refresh Token Cookie Key 값
-
 ACCOUNT_EMAIL_VERIFICATION = "none"  # email 인증 필수 여부
 
 SIMPLE_JWT = {
@@ -187,8 +186,12 @@ REST_FRAMEWORK = {
 
 SITE_ID = 1
 
+# ===== SPECTACULAR SETTINGS =====
 SPECTACULAR_SETTINGS = {
     "TITLE": "Movie Cookie",
     "DESCRIPTION": "이 API는 Movie Cookie 사이트에서 이용하는 API입니다. 회원관리, 커뮤니티, 영화정보, 영화추천의 기능이 있습니다.",
     "VERSION": "1.0.0",
 }
+
+# ===== custom user model =====
+AUTH_USER_MODEL = "accounts.User"
