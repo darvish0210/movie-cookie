@@ -26,15 +26,17 @@ class RequestFailedError(Exception):
 
 
 def process_movies(country_code, csv_file_name):
-    # kobis API 정보
+    """
+    KOBIS API로부터 전날 박스오피스 순위를 받아와서 기존 csv에 반영하는 함수입니다.\n
+    KOBIS의 영화정보가 KMDB에 있는지 체크하고 있으면 반영합니다.
+    """
+    # KOBIS 요청
     kobis_api_key = str(settings.KOBIS_API_KEY)
     kobis_base_url = "http://www.kobis.or.kr/kobisopenapi/webservice/rest/boxoffice/searchDailyBoxOfficeList.json"
 
-    # 어제 날짜 구하기
     yesterday = timezone.now() - timedelta(1)
     target_date = yesterday.strftime("%Y%m%d")
 
-    # kobis API 요청 보내기
     params = {
         "key": kobis_api_key,
         "targetDt": target_date,
@@ -49,13 +51,12 @@ def process_movies(country_code, csv_file_name):
         logging.error(f"{country_code}: KOBIS API 요청에 실패했습니다: {e}")
         raise RequestFailedError("KOBIS API 요청에 실패했습니다.") from None
 
-    # kmdb API 정보
+    # KMDB 요청
     kmdb_api_key = str(settings.KMDB_API_KEY)
     kmdb_base_url = (
         "http://api.koreafilm.or.kr/openapi-data2/wisenut/search_api/search_json2.jsp"
     )
 
-    # CSV 파일 열기
     try:
         with open(csv_file_name, "r", newline="", encoding="utf-8") as file:
             reader = csv.DictReader(file)
@@ -64,13 +65,12 @@ def process_movies(country_code, csv_file_name):
         logging.error(f"파일을 찾을 수 없습니다: {csv_file_name}")
         raise FileNotFoundError(f"파일을 찾을 수 없습니다: {csv_file_name}") from None
 
-    # kmdb API 요청 보내고 CSV 파일 업데이트: movie_data는 KOBIS 결과값
+    # kmdb API 요청 보내고 CSV 파일 업데이트 - movie_data는 KOBIS 결과값
     for movie in movie_data:
         movie_name = movie["movieNm"]
         movie_open_date = movie["openDt"]
         movie_audience = movie["audiAcc"]
 
-        # kmdb API 호출
         kmdb_params = {
             "collection": "kmdb_new2",
             "ServiceKey": kmdb_api_key,
@@ -95,7 +95,6 @@ def process_movies(country_code, csv_file_name):
                 elif country_code == "F":
                     kmdb_params["movieId"] = "B"
 
-                # 다시 요청
                 kmdb_response = requests.get(kmdb_base_url, params=kmdb_params)
                 if kmdb_response.status_code == 200:
                     kmdb_data = kmdb_response.json()
@@ -143,10 +142,9 @@ def process_movies(country_code, csv_file_name):
             logging.error("KMDB API 요청에 실패했습니다.")
             raise RequestFailedError("KMDB API 요청에 실패했습니다.") from None
 
-    # CSV 파일 업데이트 이전에 관객수에 따라 영화 정렬하기
     movies.sort(key=lambda x: int(x["관객수"]), reverse=True)
 
-    # CSV 파일 저장
+    # 변경된 내용 저장
     fieldnames = ["번호", "kmdb제목", "kmdb장르", "개봉연도", "관객수", "movie_id", "movie_seq"]
     with open(csv_file_name, "w", newline="", encoding="utf-8") as file:
         writer = csv.DictWriter(file, fieldnames=fieldnames)
@@ -156,13 +154,11 @@ def process_movies(country_code, csv_file_name):
 
 
 def genre_list(korean, foreign):
-    # 두 개의 CSV 파일 경로
-    korean_file_path = korean
-    foreign_file_path = foreign
-
-    # 두 개의 CSV 파일을 각각 DataFrame으로 읽기
-    korean_data = pd.read_csv(korean_file_path)
-    foreign_data = pd.read_csv(foreign_file_path)
+    """
+    변경된 csv파일에 새로운 장르가 있을 수 있으므로 확인을 위해 전체 장르 리스트를 중복없이 반환합니다.
+    """
+    korean_data = pd.read_csv(korean)
+    foreign_data = pd.read_csv(foreign)
 
     # 각각의 파일에서 장르 컬럼 선택 후 모든 장르를 |로 분할하여 리스트에 추가
     all_genres = []
@@ -181,6 +177,11 @@ def genre_list(korean, foreign):
 
 
 def update_csv():
+    """
+    국내/해외에 대해 각각 process_movies 함수를 실행합니다.\n
+    KOBIS API의 경우 처음 할때 못 받아오다가 다음에 새로고침하면 받아오는 경우가 있어서 두 번씩 시도해보도록 하였습니다.\n
+    업데이트 내용 반영 후 새로운 장르 리스트에 대해 장르객체가 있는지 확인하고 없으면 생성합니다.
+    """
     try:
         korean = process_movies("K", settings.BASE_DIR / "static/korean.csv")
     except RequestFailedError:
@@ -205,3 +206,7 @@ def update_csv():
         if created:
             target.save()
     print("장르추가완료")
+
+
+if __name__ == "__main__":
+    update_csv()

@@ -5,10 +5,12 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
+from .cron import genre_list
 from .models import Recommend
 from .permissions import RecommendPermission
 from .serializers import RecommendSerializer
 from .schema_examples import (
+    GENRE_LIST,
     GENERATE_REQUEST,
     GENERATE_RESPONSE,
     RECOMMEND_REQUEST,
@@ -25,6 +27,10 @@ import pandas as pd
 
 
 @extend_schema_view(
+    genres=extend_schema(  # GET recommend/genres/
+        description="영화추천 후보들(`csv`파일)에 대한 **장르 리스트**를 프론트에서 받아와서 띄우기 위한 용도입니다. 최신 흥행영화에 맞춰 `csv`파일이 업데이트 되므로, **장르 리스트**도 동적으로 요청을 받아서 생성합니다.",
+        examples=[GENRE_LIST],
+    ),
     generate=extend_schema(  # POST recommend/generate/
         description="입력값을 토대로 영화를 추천해줍니다. `input_nation`으로 국내, 해외 여부를 입력하고, `input_period`로 2000년대, 2010년대, 2020년대 중 원하는 기간을 입력하고, `input_genre`로 원하는 장르를 입력하면 됩니다. 중복 가능하고, 여러가지를 입력하고 싶으면 `|`로 구분하여 입력하면 됩니다. 그럼 누적관객수 순으로 정렬된 영화 추천 리스트 중에서 영화를 하나 추천해줍니다. **로그인 없이도 이용 가능**하고, **로그인을 하면 본인의 선호장르 태그와 좋아요한 영화도 반영**되어 더욱 본인의 취향에 맞게 추천받을 수 있습니다.",
         request=RecommendSerializer,
@@ -95,7 +101,12 @@ class RecommendViewSet(ModelViewSet):
         movie = MovieInfo.objects.get(id=movie_id)
         serializer.save(movie=movie)
 
-    @action(detail=False, methods=["POST", "GET"])
+    @action(detail=False, methods=["GET"])
+    def genres(self, request):
+        genres = genre_list("static/korean.csv", "static/foreign.csv")
+        return Response(genres)
+
+    @action(detail=False, methods=["POST"])
     def generate(self, request):
         """
         이 함수는 추천 영화를 생성하는 함수입니다.\n
@@ -125,10 +136,9 @@ class RecommendViewSet(ModelViewSet):
             if isinstance(selected_movies, Response):
                 return selected_movies
 
-            # 유저가 로그인한 경우 선호 장르와 좋아요한 영화 정보로 가중치 높이기
-            if request.user.is_authenticated:
-                user = request.user
-                selected_movies = self.update_weight(user, selected_movies)
+            # 영화들에게 가중치 부여하기
+            user = request.user
+            selected_movies = self.update_weight(user, selected_movies, genre)
 
             # 가중치, 관객수 기준으로 내림차순 정렬
             selected_movies = selected_movies.sort_values(
@@ -231,31 +241,36 @@ class RecommendViewSet(ModelViewSet):
         return movies_list
 
     @staticmethod
-    def update_weight(user, movie_list):
+    def update_weight(user, movie_list, genres):
         """
-        로그인을 한 유저의 경우, 유저의 `선호장르`, `좋아요한 영화`에 따른 `가중치`를 이 함수를 통해 부여할 수 있습니다.\n
+        각각의 영화에 대해 `가중치`를 이 함수를 통해 부여할 수 있습니다.\n
+        우선, 로그인 여부와 상관없이, 유저가 선택한 장르를 포함한 영화에 가중치를 `+5`씩 부여하였습니다.\n
+        유저가 선택한 장르를 많이 포함한 영화일수록 가중치가 높아져서 선택을 받을 확률이 올라갑니다.\n
+        로그인을 한 유저의 경우, 유저의 `선호장르`, `좋아요한 영화`에 따른 가중치가 추가됩니다.\n
         추천영화 리스트의 각 영화들에 대해서, 그 영화의 장르에 유저가 선호하는 장르가 포함되어 있다면 그 영화는 `+3`의 가중치를 얻습니다.\n
         또한 그 영화의 장르에 유저가 좋아요를 누른 영화들의 장르가 포함되어 있다면 그 영화는 `+1`의 가중치를 얻습니다.\n
-        유저가 좋아요를 누른 영화들의 장르보다 직접 선호를 표시한 장르가 좀 더 유저의 취향에 맞으므로 높은 가중치를 갖도록 설정하였습니다.
+        유저가 좋아요를 누른 영화들의 장르보다 직접 선호를 표시한 장르가 좀 더 유저의 취향에 맞으므로 조금 더 높은 가중치를 갖도록 설정하였습니다.
         """
-        # 선호장르태그 - user의 genre로 연결
-        user_genres = user.genre.all() if user.genre.all() else []
-        # 좋아요한 영화 - LikeMovie의 user의 related name
-        user_liked_movies = user.likes.all() if user.likes.all() else []
+        # 선택한 장르들에 대한 가중치 부여
+        for genre in genres:
+            movie_list.loc[movie_list["kmdb장르"].str.contains(genre.genre), "가중치"] += 5
+        if user.is_authenticated:
+            user_genres = user.genre.all() if user.genre.all() else []
+            user_liked_movies = user.likes.all() if user.likes.all() else []
 
-        # 선호장르 가중치 부여
-        for genre in user_genres:
-            movie_list.loc[movie_list["kmdb장르"].str.contains(genre.genre), "가중치"] += 3
-
-        # 영화 좋아요에 따른 가중치 부여
-        for liked_movie in user_liked_movies:
-            # user로 필터링된 LikeMovie모델 - 영화 - 장르
-            liked_genre = liked_movie.movie.genres.split("|")
-            for genre in liked_genre:
+            # 선호장르 가중치 부여
+            for genre in user_genres:
                 movie_list.loc[
                     movie_list["kmdb장르"].str.contains(genre.genre), "가중치"
-                ] += 1
+                ] += 3
 
+            # 영화 좋아요에 따른 가중치 부여
+            for liked_movie in user_liked_movies:
+                liked_genre = liked_movie.movie.genres.split("|")
+                for genre in liked_genre:
+                    movie_list.loc[
+                        movie_list["kmdb장르"].str.contains(genre.genre), "가중치"
+                    ] += 1
         return movie_list
 
     @staticmethod
