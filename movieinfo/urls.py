@@ -12,7 +12,7 @@ gpt_alaysis_router = DefaultRouter()
 gpt_alaysis_router.register("gpt", views.GPTAnalysisViewSet)
 
 urlpatterns = [
-    path("search/", views.SerachMovieAPIView.as_view(), name="search"),
+    path("search/", views.SearchMovieAPIView.as_view(), name="search"),
     path("", include(movie_info_router.urls)),
     path("detail/<int:movie_id>/", include(one_line_critic_router.urls)),
     path("detail/<int:movie_id>/", include(gpt_alaysis_router.urls)),

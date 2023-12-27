@@ -28,7 +28,7 @@ from .serializers import (
 from .detail_summary_with_GPT import send_data_to_GPT as GPT
 
 
-class SerachMovieAPIView(APIView):
+class SearchMovieAPIView(APIView):
     def post(self, request):
         query = json.loads(request.body)["query"]
         query = re.sub(" ", "", query)
