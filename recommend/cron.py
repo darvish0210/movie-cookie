@@ -1,12 +1,21 @@
 # recommend/cron.py
+import os
+import sys
+import django
+
+sys.path.append((os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+django.setup()
+
 import csv
 import logging
 import re
 import requests
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from django.conf import settings
+from django.utils import timezone
 from movieinfo.models import Genre
 
 
@@ -30,7 +39,7 @@ def process_movies(country_code, csv_file_name):
     kobis_base_url = "http://www.kobis.or.kr/kobisopenapi/webservice/rest/boxoffice/searchDailyBoxOfficeList.json"
 
     # 어제 날짜 구하기
-    yesterday = datetime.now() - timedelta(1)
+    yesterday = timezone.now() - timedelta(1)
     target_date = yesterday.strftime("%Y%m%d")
 
     # kobis API 요청 보내기
@@ -183,23 +192,27 @@ def genre_list(korean, foreign):
 
 def update_csv():
     try:
-        korean = process_movies("K", "static/korean.csv")
+        korean = process_movies("K", "csv/korean.csv")
     except RequestFailedError:
-        korean = process_movies("K", "static/korean.csv")
+        korean = process_movies("K", "csv/korean.csv")
     try:
-        foreign = process_movies("F", "static/foreign.csv")
+        foreign = process_movies("F", "csv/foreign.csv")
     except RequestFailedError:
-        foreign = process_movies("F", "static/foreign.csv")
+        foreign = process_movies("F", "csv/foreign.csv")
 
     if korean == "complete":
         logging.info("국내영화 업데이트 완료")
     if foreign == "complete":
         logging.info("해외영화 업데이트 완료")
 
-    genres = genre_list("static/korean.csv", "static/foreign.csv")
+    genres = genre_list("csv/korean.csv", "csv/foreign.csv")
 
     for genre in genres:
         target, created = Genre.objects.get_or_create(genre=genre)
         if created:
             target.save()
     logging.info("장르추가완료")
+
+
+if __name__ == "__main__":
+    update_csv()

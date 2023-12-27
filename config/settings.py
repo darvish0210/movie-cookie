@@ -139,7 +139,7 @@ TIME_ZONE = "Asia/Seoul"
 
 USE_I18N = True
 
-USE_TZ = True
+USE_TZ = False
 
 
 # Static files (CSS, JavaScript, Images)
@@ -200,5 +200,5 @@ AUTH_USER_MODEL = "accounts.User"
 
 # ===== CRONTAB SETTINGS =====
 CRONJOBS = [
-    ("10 22 * * *", "recommend.cron.update_csv"),
+    ("10 23 * * *", "recommend.cron.update_csv"),
 ]
