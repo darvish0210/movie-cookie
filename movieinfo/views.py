@@ -189,7 +189,29 @@ class UserLWWViewSet(viewsets.ModelViewSet):
             return Response(errorMessage, status=status.HTTP_400_BAD_REQUEST)
 
     def retrieve(self, request, *args, **kwargs):
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+        movie_id = self.kwargs["movie_id"]
+        user = self.kwargs["user"]
+        mode = kwargs["mode"]
+
+        if mode == "like":
+            queryset = LikeMovie.objects.get(Q(movie__id=movie_id) & Q(user__pk=user))
+            serializer = LikeMovieSerializers(queryset)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        elif mode == "watchlist":
+            queryset = WatchlistMovie.objects.get(
+                Q(movie__id=movie_id) & Q(user__pk=user)
+            )
+            serializer = WahtchlistMovieSerializers(queryset)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        elif mode == "watched":
+            queryset = WatchedMovie.objects.get(
+                Q(movie__id=movie_id) & Q(user__pk=user)
+            )
+            serializer = WatchedMovieSerializers(queryset)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            errorMessage = {"message": "잘못된 응답입니다."}
+            return Response(errorMessage, status=status.HTTP_400_BAD_REQUEST)
 
     def create(self, request, *args, **kwargs):
         movie_id = kwargs["movie_id"]
@@ -224,46 +246,50 @@ class UserLWWViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         movie_id = kwargs["movie_id"]
         mode = kwargs["mode"]
-        user = request.user
-        if mode == "like":
-            try:
-                instance = LikeMovie.objects.get(
-                    Q(user=user) & Q(movie=MovieInfo.objects.get(id=movie_id))
-                )
-                if user == instance.user:
-                    instance.delete()
-                    return Response(status=status.HTTP_204_NO_CONTENT)
-                else:
-                    raise ValueError
-            except:
-                errorMessage = {"message": "잘못된 응답입니다."}
-                return Response(errorMessage, status=status.HTTP_400_BAD_REQUEST)
-        elif mode == "watchlist":
-            try:
-                instance = WatchlistMovie.objects.get(
-                    Q(user=user) & Q(movie=MovieInfo.objects.get(id=movie_id))
-                )
-                if user == instance.user:
-                    instance.delete()
-                    return Response(status=status.HTTP_204_NO_CONTENT)
-                else:
-                    raise ValueError
-            except:
-                errorMessage = {"message": "잘못된 응답입니다."}
-                return Response(errorMessage, status=status.HTTP_400_BAD_REQUEST)
-        elif mode == "watched":
-            try:
-                instance = WatchedMovie.objects.get(
-                    Q(user=user) & Q(movie=MovieInfo.objects.get(id=movie_id))
-                )
-                if user == instance.user:
-                    instance.delete()
-                    return Response(status=status.HTTP_204_NO_CONTENT)
-                else:
-                    raise ValueError
-            except:
-                errorMessage = {"message": "잘못된 응답입니다."}
-                return Response(errorMessage, status=status.HTTP_400_BAD_REQUEST)
+        user = User.objects.get(pk=kwargs["user"])
+        if request.user == user:
+            if mode == "like":
+                try:
+                    instance = LikeMovie.objects.get(
+                        Q(user=user) & Q(movie=MovieInfo.objects.get(id=movie_id))
+                    )
+                    if user == instance.user:
+                        instance.delete()
+                        return Response(status=status.HTTP_204_NO_CONTENT)
+                    else:
+                        raise ValueError
+                except:
+                    errorMessage = {"message": "잘못된 응답입니다."}
+                    return Response(errorMessage, status=status.HTTP_400_BAD_REQUEST)
+            elif mode == "watchlist":
+                try:
+                    instance = WatchlistMovie.objects.get(
+                        Q(user=user) & Q(movie=MovieInfo.objects.get(id=movie_id))
+                    )
+                    if user == instance.user:
+                        instance.delete()
+                        return Response(status=status.HTTP_204_NO_CONTENT)
+                    else:
+                        raise ValueError
+                except:
+                    errorMessage = {"message": "잘못된 응답입니다."}
+                    return Response(errorMessage, status=status.HTTP_400_BAD_REQUEST)
+            elif mode == "watched":
+                try:
+                    instance = WatchedMovie.objects.get(
+                        Q(user=user) & Q(movie=MovieInfo.objects.get(id=movie_id))
+                    )
+                    if user == instance.user:
+                        instance.delete()
+                        return Response(status=status.HTTP_204_NO_CONTENT)
+                    else:
+                        raise ValueError
+                except:
+                    errorMessage = {"message": "잘못된 응답입니다."}
+                    return Response(errorMessage, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            errorMessage = {"message": "권한이 없습니다."}
+            return Response(errorMessage, status=status.HTTP_400_BAD_REQUEST)
 
 
 class GPTAnalysisViewSet(viewsets.ModelViewSet):
