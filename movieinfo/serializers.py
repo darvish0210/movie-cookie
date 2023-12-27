@@ -157,7 +157,7 @@ class WatchedMovieSerializers(serializers.ModelSerializer):
         raise ValidationError("이미 등록되어 있습니다.")
 
 
-class WahtchlistMovieSerializers(serializers.ModelSerializer):
+class WatchlistMovieSerializers(serializers.ModelSerializer):
     class Meta:
         model = WatchlistMovie
         fields = ["id"]

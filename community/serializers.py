@@ -2,16 +2,49 @@ from rest_framework import serializers
 from .models import Post, Comment
 
 
-class PostSerializer(serializers.ModelSerializer):
-    # user_name = serializers.SerializerMethodField()
+class CommentSerializer(serializers.ModelSerializer):
+    username = serializers.SerializerMethodField()
+    reply = serializers.SerializerMethodField()
 
-    # comments = CommentSerializer(many=True, read_only=True)
+    class Meta:
+        model = Comment
+        fields = [
+            "id",
+            "post",
+            "user",
+            "username",
+            "content",
+            "created_at",
+            "updated_at",
+            "parent",
+            "reply",
+        ]
+        read_only_fields = ["user"]
+
+    def get_username(self, obj):
+        return obj.user.username
+
+    def create(self, validated_data):
+        validated_data["user"] = self.context["request"].user
+        return super().create(validated_data)
+
+    def get_reply(self, instance):
+        serializer = self.__class__(instance.reply, many=True)
+        serializer.bind("", self)
+        return serializer.data
+
+
+class PostSerializer(serializers.ModelSerializer):
+    username = serializers.SerializerMethodField()
+
+    comments = CommentSerializer(many=True, read_only=True)
+
     class Meta:
         model = Post
         fields = [
             "id",
-            # "user",
-            # "user_name",
+            "user",
+            "username",
             "title",
             "content",
             "image",
@@ -20,46 +53,14 @@ class PostSerializer(serializers.ModelSerializer):
             "view_count",
             "comments",
         ]
-        # read_only_fields = ["user"]
+        read_only_fields = ["user"]
 
-    # def get_user_name(self, obj):
-    #     return obj.user.user_name
+    def get_username(self, obj):
+        return obj.user.username
 
-    # def create(self, validated_data):
-
-    #     validated_data["user"] = self.context["request"].user
-    #     return super().create(validated_data)
-
-
-class CommentSerializer(serializers.ModelSerializer):
-    # author_username = serializers.SerializerMethodField()
-    reply = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Comment
-        fields = [
-            "id",
-            "post",
-            # "user",
-            # "user_name",
-            "content",
-            "created_at",
-            "updated_at",
-            "parent",
-            "reply",
-        ]
-        # read_only_fields = ["user"]
-
-    # def get_user_name(self, obj):
-    #     return obj.user.user_name
-
-    # def create(self, validated_data):
-    #     validated_data["user"] = self.context["request"].user
-    #     return super().create(validated_data)
-    def get_reply(self, instance):
-        serializer = self.__class__(instance.reply, many=True)
-        serializer.bind("", self)
-        return serializer.data
+    def create(self, validated_data):
+        validated_data["user"] = self.context["request"].user
+        return super().create(validated_data)
 
 
 class PostOnlySerializer(serializers.ModelSerializer):
