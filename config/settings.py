@@ -200,5 +200,9 @@ AUTH_USER_MODEL = "accounts.User"
 
 # ===== CRONTAB SETTINGS =====
 CRONJOBS = [
-    ("10 23 * * *", "recommend.cron.update_csv"),
+    (
+        "0 13 * * *",
+        "recommend.cron.update_csv",
+        ">> /home/ubuntu/app/movie-cookie/cron.log 2>&1",
+    ),
 ]

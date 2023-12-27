@@ -183,9 +183,9 @@ class RecommendViewSet(ModelViewSet):
         # nation - 국내, 해외 여부에 따라 CSV 파일 추가
         movies_data = pd.DataFrame()
         if nation_korean:
-            movies_data = pd.concat([movies_data, pd.read_csv("csv/korean.csv")])
+            movies_data = pd.concat([movies_data, pd.read_csv("static/korean.csv")])
         if nation_foreign:
-            movies_data = pd.concat([movies_data, pd.read_csv("csv/foreign.csv")])
+            movies_data = pd.concat([movies_data, pd.read_csv("static/foreign.csv")])
         if movies_data.empty:
             return Response({"detail": "하나 이상의 국가를 선택해주세요."}, status=400)
 

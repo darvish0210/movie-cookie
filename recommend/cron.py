@@ -25,14 +25,6 @@ class RequestFailedError(Exception):
         super().__init__(self.message)
 
 
-# 로그 설정
-logging.basicConfig(
-    filename="cron.log",  # 로그 파일 경로 및 이름
-    level=logging.INFO,  # 로그 레벨 설정 (INFO 이상의 로그 기록)
-    format="%(asctime)s - %(levelname)s - %(message)s",  # 로그 포맷 설정
-)
-
-
 def process_movies(country_code, csv_file_name):
     # kobis API 정보
     kobis_api_key = str(settings.KOBIS_API_KEY)
@@ -95,9 +87,7 @@ def process_movies(country_code, csv_file_name):
             kmdb_data = kmdb_response.json()
 
             if kmdb_data["TotalCount"] == 0:
-                logging.info(
-                    f'극영화에서 "{movie_name}"에 대한 kmdb 데이터를 찾을 수 없습니다. 비극영화로 다시 검색합니다.'
-                )
+                print(f'극영화에서 "{movie_name}"에 대한 kmdb 데이터를 찾을 수 없습니다. 비극영화로 다시 검색합니다.')
 
                 # 다시 검색을 위해 movieId 변경 후 재검색
                 if country_code == "K":
@@ -192,27 +182,26 @@ def genre_list(korean, foreign):
 
 def update_csv():
     try:
-        korean = process_movies("K", "csv/korean.csv")
+        korean = process_movies("K", settings.BASE_DIR / "static/korean.csv")
     except RequestFailedError:
-        korean = process_movies("K", "csv/korean.csv")
+        korean = process_movies("K", settings.BASE_DIR / "static/korean.csv")
     try:
-        foreign = process_movies("F", "csv/foreign.csv")
+        foreign = process_movies("F", settings.BASE_DIR / "static/foreign.csv")
     except RequestFailedError:
-        foreign = process_movies("F", "csv/foreign.csv")
+        foreign = process_movies("F", settings.BASE_DIR / "static/foreign.csv")
 
     if korean == "complete":
-        logging.info("국내영화 업데이트 완료")
+        print("국내영화 업데이트 완료")
     if foreign == "complete":
-        logging.info("해외영화 업데이트 완료")
+        print("해외영화 업데이트 완료")
 
-    genres = genre_list("csv/korean.csv", "csv/foreign.csv")
+    genres = genre_list(
+        settings.BASE_DIR / "static/korean.csv",
+        settings.BASE_DIR / "static/foreign.csv",
+    )
 
     for genre in genres:
         target, created = Genre.objects.get_or_create(genre=genre)
         if created:
             target.save()
-    logging.info("장르추가완료")
-
-
-if __name__ == "__main__":
-    update_csv()
+    print("장르추가완료")
