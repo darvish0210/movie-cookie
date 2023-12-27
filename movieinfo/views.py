@@ -166,6 +166,7 @@ class UserLWWViewSet(viewsets.ModelViewSet):
     queryset = LikeMovie.objects.all()
     serializer_class = LikeMovieSerializers
     permission_classes = [IsAuthenticated]
+    lookup_field = "user"
 
     def list(self, request, *args, **kwargs):
         pk = self.kwargs["movie_id"]
@@ -221,14 +222,13 @@ class UserLWWViewSet(viewsets.ModelViewSet):
             return Response(errorMessage, status=status.HTTP_400_BAD_REQUEST)
 
     def destroy(self, request, *args, **kwargs):
-        pk = self.kwargs["pk"]
         movie_id = kwargs["movie_id"]
         mode = kwargs["mode"]
         user = request.user
         if mode == "like":
             try:
                 instance = LikeMovie.objects.get(
-                    Q(id=pk) & Q(movie=MovieInfo.objects.get(id=movie_id))
+                    Q(user=user) & Q(movie=MovieInfo.objects.get(id=movie_id))
                 )
                 if user == instance.user:
                     instance.delete()
@@ -241,7 +241,7 @@ class UserLWWViewSet(viewsets.ModelViewSet):
         elif mode == "watchlist":
             try:
                 instance = WatchlistMovie.objects.get(
-                    Q(id=pk) & Q(movie=MovieInfo.objects.get(id=movie_id))
+                    Q(user=user) & Q(movie=MovieInfo.objects.get(id=movie_id))
                 )
                 if user == instance.user:
                     instance.delete()
@@ -254,7 +254,7 @@ class UserLWWViewSet(viewsets.ModelViewSet):
         elif mode == "watched":
             try:
                 instance = WatchedMovie.objects.get(
-                    Q(id=pk) & Q(movie=MovieInfo.objects.get(id=movie_id))
+                    Q(user=user) & Q(movie=MovieInfo.objects.get(id=movie_id))
                 )
                 if user == instance.user:
                     instance.delete()
