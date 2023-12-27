@@ -22,7 +22,7 @@ from .serializers import (
     OneLineCriticCreateUpdateSerializers,
     GPTAnalysisSerializers,
     LikeMovieSerializers,
-    WahtchlistMovieSerializers,
+    WatchlistMovieSerializers,
     WatchedMovieSerializers,
 )
 from .detail_summary_with_GPT import send_data_to_GPT as GPT
@@ -178,7 +178,7 @@ class UserLWWViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_200_OK)
         elif mode == "watchlist":
             queryset = WatchlistMovie.objects.filter(movie__id=pk)
-            serializer = WahtchlistMovieSerializers(queryset, many=True)
+            serializer = WatchlistMovieSerializers(queryset, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         elif mode == "watched":
             queryset = WatchedMovie.objects.filter(movie__id=pk)
@@ -201,7 +201,7 @@ class UserLWWViewSet(viewsets.ModelViewSet):
             queryset = WatchlistMovie.objects.get(
                 Q(movie__id=movie_id) & Q(user__pk=user)
             )
-            serializer = WahtchlistMovieSerializers(queryset)
+            serializer = WatchlistMovieSerializers(queryset)
             return Response(serializer.data, status=status.HTTP_200_OK)
         elif mode == "watched":
             queryset = WatchedMovie.objects.get(
@@ -226,7 +226,7 @@ class UserLWWViewSet(viewsets.ModelViewSet):
             )
             return Response(instance.data, status=status.HTTP_201_CREATED)
         elif mode == "watchlist":
-            instance = WahtchlistMovieSerializers(data=data)
+            instance = WatchlistMovieSerializers(data=data)
             instance.is_valid(raise_exception=True)
             instance.save(
                 movie=MovieInfo.objects.get(id=movie_id), user=self.request.user
