@@ -10,12 +10,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-env = environ.Env(DEBUG=(bool, True))
+env = environ.Env(DEBUG=(bool, False))
 
 environ.Env.read_env(BASE_DIR / ".env")
 
 SECRET_KEY = env("SECRET_KEY")
 KMDB_API_KEY = env("KMDB_API_KEY")
+KOBIS_API_KEY = env("KOBIS_API_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env("DEBUG")
@@ -42,6 +43,7 @@ INSTALLED_APPS = [
     "dj_rest_auth.registration",
     "django.contrib.sites",
     "django_cleanup.apps.CleanupConfig",
+    "django_crontab",
     "drf_spectacular",
     # custom apps
     "movieinfo",
@@ -137,7 +139,7 @@ TIME_ZONE = "Asia/Seoul"
 
 USE_I18N = True
 
-USE_TZ = True
+USE_TZ = False
 
 
 # Static files (CSS, JavaScript, Images)
@@ -195,3 +197,12 @@ SPECTACULAR_SETTINGS = {
 
 # ===== custom user model =====
 AUTH_USER_MODEL = "accounts.User"
+
+# ===== CRONTAB SETTINGS =====
+CRONJOBS = [
+    (
+        "0 13 * * *",
+        "recommend.cron.update_csv",
+        ">> /home/ubuntu/app/movie-cookie/cron.log 2>&1",
+    ),
+]

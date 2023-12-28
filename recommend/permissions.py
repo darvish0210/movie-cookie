@@ -8,7 +8,7 @@ class RecommendPermission(BasePermission):
         `/recommend/`: 로그인 한 유저들만 DB에 저장된 추천영화 목록 조회(`GET`), DB에 저장(`POST`) 가능\n
         `/recommend/generate/`: 로그인 여부 상관없이 영화 추천받기(`POST`) 가능
         """
-        if view.action == "generate":
+        if view.action == "generate" or view.action == "genres":
             return True
         return request.user.is_authenticated
 
