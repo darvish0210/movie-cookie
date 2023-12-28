@@ -2,7 +2,7 @@ from rest_framework import serializers
 from rest_framework.validators import ValidationError
 from django.db.models import Q
 
-from .models import MovieInfo, OneLineCritic, GPTAnalysis
+from .models import MovieInfo, OneLineCritic
 from accounts.models import User
 from accounts.models import LikeMovie, WatchedMovie, WatchlistMovie
 
@@ -117,12 +117,6 @@ class OneLineCriticCreateUpdateSerializers(serializers.ModelSerializer):
         if value < 0 or value > 5:
             raise ValidationError("잘못된 별점 입력입니다.")
         return value
-
-
-class GPTAnalysisSerializers(serializers.ModelSerializer):
-    class Meta:
-        model = GPTAnalysis
-        fields = ["movie", "message", "num_of_critics"]
 
 
 class LikeMovieSerializers(serializers.ModelSerializer):
